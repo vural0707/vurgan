@@ -140,7 +140,7 @@
     <button class="nav-btn active" data-page="dashboard">Dashboard</button>
     <button class="nav-btn" data-page="data-entry">Personel Veri Girişi</button>
     <button class="nav-btn" data-page="ranking">Genel Sıralama</button>
-    <button class="nav-btn" data-page="call-center">Çağrı Merkezi</button>
+    <button class="nav-btn" data-page="call-center"></button>
 
     <div class="section-label">Yönetim</div>
     <button class="nav-btn admin-only" data-page="staff">Personel Yönetimi</button>
@@ -213,21 +213,21 @@
           <div id="branchDistribution"></div>
         </div>
         <div class="panel-card box">
-          <h3>Periyot Lideri</h3>
+          <h3>Periyot Lideri 🏆</h3>
           <div id="leaderCard"></div>
         </div>
       </div>
 
       <div class="tables">
         <div class="panel-card box">
-          <h3>İlk 3 Satış Danışmanı</h3>
+          <h3>En Çok Ciro Yapan 3 Danışman</h3>
           <table>
             <thead><tr><th>#</th><th>Ad Soyad</th><th>Şube</th><th>Ciro</th></tr></thead>
             <tbody id="topSalesTable"></tbody>
           </table>
         </div>
         <div class="panel-card box">
-          <h3>İlk 2 Çağrı Merkezi</h3>
+          <h3>En Çok Ciro Yapan </h3>
           <table>
             <thead><tr><th>#</th><th>Ad Soyad</th><th>Şube</th><th>Ciro</th></tr></thead>
             <tbody id="topCallTable"></tbody>
@@ -294,7 +294,7 @@
     </section>
 
     <section id="page-call-center" class="page">
-      <div class="topbar"><div class="title"><h2>Çağrı Merkezi</h2><p>Sadece çağrı personeli görünümü</p></div></div>
+      <div class="topbar"><div class="title"><h2></h2><p>Sadece çağrı personeli görünümü</p></div></div>
       <div class="grid-3" id="callMetrics"></div>
       <div class="panel-card page-card" style="margin-top:14px">
         <table>
@@ -514,10 +514,10 @@ function normalizeTargets(){
 
 function normalizeDepartments(){
   db.users.forEach(u=>{
-    if(u.department === 'Çağrı Merkezi') u.department = 'Çağrı';
+    if(u.department === '') u.department = 'Çağrı';
   });
   db.entries.forEach(e=>{
-    if(e.department === 'Çağrı Merkezi') e.department = 'Çağrı';
+    if(e.department === '') e.department = 'Çağrı';
   });
 }
 function normalizeSettings(){
@@ -586,8 +586,16 @@ function yesterday(){
 function monthStart(){
   const d = new Date();
   const yyyy = d.getFullYear();
-  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
   return `${yyyy}-${mm}-01`;
+}
+function monthEnd(){
+  const d = new Date();
+  const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+  const yyyy = lastDay.getFullYear();
+  const mm = String(lastDay.getMonth() + 1).padStart(2, '0');
+  const dd = String(lastDay.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
 }
 function inRange(date,start,end){ return (!start || date>=start) && (!end || date<=end); }
 function getPeriodRange(){
@@ -599,6 +607,7 @@ function updatePeriodBadge(){
   const todayValue = today();
   const yesterdayValue = yesterday();
   const monthValue = monthStart();
+  const monthEndValue = monthEnd();
   const period = getCurrentPeriodRange();
   let label = 'Özel Aralık';
   if(start === yesterdayValue && end === yesterdayValue){
@@ -607,7 +616,7 @@ function updatePeriodBadge(){
     label = 'Bugün';
   }else if(start === period.start && end === period.end){
     label = 'Periyot';
-  }else if(start === monthValue && end === todayValue){
+  }else if(start === monthValue && end === monthEndValue){
     label = 'Ay';
   }
   q('periodBadge').textContent = `${label} · ${start || '-'} / ${end || '-'}`;
@@ -791,7 +800,7 @@ function renderDashboard(){
 
   const sales = leaderboard.filter(x=>x.department!=='Çağrı').slice(0,3);
   q('topSalesTable').innerHTML = sales.length ? sales.map((p,i)=>`<tr><td>${i+1}</td><td>${p.name}</td><td>${p.branch}</td><td>${formatTL(p.revenue)}</td></tr>`).join('') : '<tr><td colspan="4" class="empty">Veri yok</td></tr>';
-  const calls = leaderboard.filter(x=>x.department==='Çağrı').slice(0,2);
+  const calls = leaderboard.filter(x=>x.department==='Çağrı').slice(0,1);
   q('topCallTable').innerHTML = calls.length ? calls.map((p,i)=>`<tr><td>${i+1}</td><td>${p.name}</td><td>${p.branch}</td><td>${formatTL(p.revenue)}</td></tr>`).join('') : '<tr><td colspan="4" class="empty">Veri yok</td></tr>';
 }
 function aggregateByPerson(entries){
@@ -1069,7 +1078,7 @@ function setThisPeriod(){
 }
 function setThisMonth(){
   q('filterStart').value = monthStart();
-  q('filterEnd').value = today();
+  q('filterEnd').value = monthEnd();
   updatePeriodBadge();
   renderAll();
 }
