@@ -38,7 +38,7 @@
     .title p{margin:2px 0 0;color:#778191}
     .period-badge{background:#e8ddb0;padding:10px 14px;border-radius:14px;font-size:14px;font-weight:700;white-space:nowrap}
     .panel-card{background:var(--card);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow)}
-    .filter-row{padding:18px;display:grid;grid-template-columns:160px 180px 140px 140px 100px 100px 100px auto;gap:10px;align-items:end;margin-bottom:16px}
+    .filter-row{padding:18px;display:grid;grid-template-columns:160px 180px 140px 140px 100px 100px 100px 100px auto;gap:10px;align-items:end;margin-bottom:16px}
     label{font-size:12px;color:#6d7685;font-weight:700;display:block;margin:0 0 6px}
     input, select, textarea{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:#fff;font-size:14px;color:#202b3a;outline:none}
     textarea{min-height:90px;resize:vertical}
@@ -168,7 +168,7 @@
           <h2>Dashboard</h2>
           <p>Şube filtreli genel görünüm</p>
         </div>
-        <div class="period-badge" id="periodBadge">Nisan 2026 Periyot 1 · 2026-04-01 / 2026-04-15</div>
+        <div class="period-badge" id="periodBadge">Bugün · - / -</div>
       </div>
 
       <div class="panel-card filter-row">
@@ -187,6 +187,9 @@
         <div>
           <label>Bitiş</label>
           <input type="date" id="filterEnd" onchange="renderAll()" />
+        </div>
+        <div>
+          <button class="btn btn-primary" style="width:100%" onclick="setYesterday()">Dün</button>
         </div>
         <div>
           <button class="btn btn-primary" style="width:100%" onclick="setToday()">Bugün</button>
@@ -430,7 +433,7 @@
 </div>
 
 <script>
-const STORAGE_KEY = 'vurganPanelData_v4';
+const STORAGE_KEY = 'vurganPanelData_v5';
 let db = null;
 let currentUser = null;
 
@@ -439,9 +442,9 @@ function defaultData(){
     settings: {
       branches: ['Alanya','Ereğli','Karaman','Manavgat'],
       periodName: 'Nisan 2026 Periyot 1',
-      periodStart: '2026-04-04',
+      periodStart: '2026-04-01',
       periodEnd: '2026-04-15',
-      periodText: '2026-04-04 / 2026-04-15'
+      periodText: '2026-04-01 / 2026-04-15'
     },
     targets: {
       branchTargets: {
@@ -565,14 +568,26 @@ function getRankingEntries(){
 function q(id){ return document.getElementById(id); }
 function formatTL(n){ return new Intl.NumberFormat('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(n||0)) + ' ₺'; }
 function formatInt(n){ return new Intl.NumberFormat('tr-TR').format(Number(n||0)); }
-function today(){ return new Date().toISOString().slice(0,10); }
+function today(){
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+function yesterday(){
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
 function monthStart(){
   const d = new Date();
-  const local = new Date(d.getFullYear(), d.getMonth(), 1, 12, 0, 0);
-  const yyyy = local.getFullYear();
-  const mm = String(local.getMonth()+1).padStart(2,'0');
-  const dd = String(local.getDate()).padStart(2,'0');
-  return `${yyyy}-${mm}-${dd}`;
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  return `${yyyy}-${mm}-01`;
 }
 function inRange(date,start,end){ return (!start || date>=start) && (!end || date<=end); }
 function getPeriodRange(){
@@ -582,10 +597,13 @@ function updatePeriodBadge(){
   const start = q('filterStart')?.value || '';
   const end = q('filterEnd')?.value || '';
   const todayValue = today();
+  const yesterdayValue = yesterday();
   const monthValue = monthStart();
   const period = getCurrentPeriodRange();
   let label = 'Özel Aralık';
-  if(start === todayValue && end === todayValue){
+  if(start === yesterdayValue && end === yesterdayValue){
+    label = 'Dün';
+  }else if(start === todayValue && end === todayValue){
     label = 'Bugün';
   }else if(start === period.start && end === period.end){
     label = 'Periyot';
@@ -666,7 +684,7 @@ function populateStaticInputs(){
   if(q('staffBranch')) q('staffBranch').value = db.settings.branches.includes(prevStaffBranch) ? prevStaffBranch : (db.settings.branches[0] || '');
   if(q('targetBranch')) q('targetBranch').value = db.settings.branches.includes(prevTargetBranch) ? prevTargetBranch : (db.settings.branches[0] || '');
 
-  q('filterStart').value = prevFilterStart || monthStart();
+  q('filterStart').value = prevFilterStart || today();
   q('filterEnd').value = prevFilterEnd || today();
   q('entryDate').value = prevEntryDate || today();
   q('leaveStart').value = prevLeaveStart || today();
@@ -675,6 +693,7 @@ function populateStaticInputs(){
   q('periodStart').value = db.settings.periodStart || '';
   q('periodEnd').value = db.settings.periodEnd || '';
   q('periodText').value = db.settings.periodText;
+  syncPersonFilter();
   updatePeriodBadge();
 }
 
@@ -700,7 +719,7 @@ function updateUserUI(){
   document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden', currentUser.role!=='Yönetici'));
   document.querySelectorAll('.admin-only-page').forEach(el=>el.classList.toggle('hidden', currentUser.role!=='Yönetici'));
 }
-function afterLoginRender(){ populateStaticInputs(); bindNav(); renderAll(); }
+function afterLoginRender(){ populateStaticInputs(); bindNav(); setToday(); }
 function bindNav(){
   document.querySelectorAll('.nav-btn[data-page]').forEach(btn=>{
     btn.onclick=()=>{
@@ -881,7 +900,7 @@ function renderTargets(){
       <td>${formatInt(t.course)}</td>
       <td>${formatTL(t.revenue)}</td>
       <td>${formatInt(t.talk)} dk</td>
-      <td><button class="btn btn-outline btn-small" onclick="editBranchTarget('${branch.replace(/'/g,"\'")}')">Düzenle</button></td>
+      <td><button class="btn btn-outline btn-small" onclick="editBranchTarget('${branch.replace(/'/g,"\\'")}')">Düzenle</button></td>
     </tr>`);
   });
   Object.keys(db.targets.personTargets || {}).forEach(personId=>{
@@ -914,16 +933,20 @@ function renderSettings(){
   q('periodText').value = db.settings.periodText;
   q('branchList').innerHTML = db.settings.branches.map(b=>`<span class="pill">${b}</span>`).join('');
 }
-function getFilteredEntries(){
-  return filteredEntries();
-}
 function renderAll(){
-  populateStaticInputs();
   renderDashboard();
   renderEntries();
   renderRanking();
   renderCallCenter();
-  if(currentUser?.role==='Yönetici'){ renderStaff(); renderTargets(); renderLeaves(); renderSettings(); if(q('targetBranch') && !q('targetRevenue').value && !q('targetPhone').value && !q('targetAppointment').value && !q('targetYY').value && !q('targetRegistration').value && !q('targetCourse').value && !q('targetTalk').value){ editBranchTarget(q('targetBranch').value); } }
+  if(currentUser?.role==='Yönetici'){
+    renderStaff();
+    renderTargets();
+    renderLeaves();
+    renderSettings();
+    if(q('targetBranch') && !q('targetRevenue').value && !q('targetPhone').value && !q('targetAppointment').value && !q('targetYY').value && !q('targetRegistration').value && !q('targetCourse').value && !q('targetTalk').value){
+      editBranchTarget(q('targetBranch').value);
+    }
+  }
 }
 function saveEntry(){
   const personId=q('entryPerson').value;
@@ -993,14 +1016,13 @@ function saveTarget(){
   save();
   renderTargets();
 }
-function editTarget(branch){ editBranchTarget(branch); }
 function addLeave(){
   const person=db.users.find(u=>u.id===q('leavePerson').value); if(!person) return;
   db.leaves.unshift({id:id(), personName:person.fullName, type:q('leaveType').value, start:q('leaveStart').value, end:q('leaveEnd').value, note:q('leaveNote').value.trim()});
   save(); q('leaveNote').value=''; renderLeaves();
 }
 function deleteLeave(leaveId){ db.leaves=db.leaves.filter(l=>l.id!==leaveId); save(); renderLeaves(); }
-function addBranch(){ const name=q('newBranchName').value.trim(); if(!name) return; if(db.settings.branches.includes(name)) return alert('Şube zaten var.'); db.settings.branches.push(name); db.targets.branchTargets[name]=normalizeTargetValue(0); save(); q('newBranchName').value=''; renderAll(); }
+function addBranch(){ const name=q('newBranchName').value.trim(); if(!name) return; if(db.settings.branches.includes(name)) return alert('Şube zaten var.'); db.settings.branches.push(name); db.targets.branchTargets[name]=normalizeTargetValue(0); save(); q('newBranchName').value=''; populateStaticInputs(); renderAll(); }
 function saveSettings(){
   db.settings.periodName = q('periodName').value.trim() || db.settings.periodName;
   db.settings.periodStart = q('periodStart').value || db.settings.periodStart || monthStart();
@@ -1023,9 +1045,15 @@ function exportData(){
 q('importFile').addEventListener('change', e=>{
   const file=e.target.files[0]; if(!file) return;
   const reader=new FileReader();
-  reader.onload=()=>{ try{ db=JSON.parse(reader.result); save(); renderAll(); alert('Yedek içe aktarıldı.'); }catch(err){ alert('Dosya okunamadı.'); } };
+  reader.onload=()=>{ try{ db=JSON.parse(reader.result); normalizeTargets(); normalizeDepartments(); normalizeSettings(); save(); populateStaticInputs(); renderAll(); alert('Yedek içe aktarıldı.'); }catch(err){ alert('Dosya okunamadı.'); } };
   reader.readAsText(file,'utf-8');
 });
+function setYesterday(){
+  q('filterStart').value = yesterday();
+  q('filterEnd').value = yesterday();
+  updatePeriodBadge();
+  renderAll();
+}
 function setToday(){
   q('filterStart').value = today();
   q('filterEnd').value = today();
@@ -1047,7 +1075,6 @@ function setThisMonth(){
 }
 
 load();
-// autofocus style quick init
 q('loginUsername').value='admin';
 q('loginPassword').value='admin123';
 </script>
