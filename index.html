@@ -1,1 +1,1509 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vurgan Panel</title>
+  <style>
+    :root{
+      --bg:#f3f4f6;
+      --card:#ffffff;
+      --text:#16243a;
+      --muted:#7c8798;
+      --line:#d9dde5;
+      --yellow:#f2c94c;
+      --yellow-soft:#f7edc0;
+      --nav:#f5f2df;
+      --nav-active:#ece2ac;
+      --danger:#d64545;
+      --success:#1f8f4d;
+      --shadow:0 8px 22px rgba(25,35,52,.06);
+      --radius:16px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+    .app{display:flex;min-height:100vh}
+    .sidebar{width:230px;background:#faf9f5;border-right:1px solid #e6e6e6;padding:18px 16px;position:fixed;left:0;top:0;bottom:0;overflow:auto}
+    .main{margin-left:230px;flex:1;padding:28px 22px 40px}
+    .brand{display:flex;gap:12px;align-items:center;margin-bottom:24px}
+    .brand-badge{width:38px;height:38px;border-radius:50%;background:var(--yellow);display:flex;align-items:center;justify-content:center;font-weight:800}
+    .brand h1{font-size:16px;margin:0 0 3px 0}
+    .brand p{margin:0;font-size:12px;color:#6f7580}
+    .section-label{font-size:12px;color:#7d8592;text-transform:uppercase;letter-spacing:.08em;margin:20px 10px 8px}
+    .nav-btn{display:block;width:100%;padding:12px 12px;border-radius:14px;border:none;background:transparent;text-align:left;font-weight:700;color:#131c2e;cursor:pointer;font-size:14px}
+    .nav-btn.active{background:var(--nav-active)}
+    .nav-btn:hover{background:var(--nav)}
+    .topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:15px;margin-bottom:16px}
+    .title h2{margin:0;font-size:24px}
+    .title p{margin:2px 0 0;color:#778191}
+    .period-badge{background:#e8ddb0;padding:10px 14px;border-radius:14px;font-size:14px;font-weight:700;white-space:nowrap}
+    .panel-card{background:var(--card);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow)}
+    .filter-row{padding:18px;display:grid;grid-template-columns:160px 180px 140px 140px 100px 100px 100px 100px auto;gap:10px;align-items:end;margin-bottom:16px}
+    label{font-size:12px;color:#6d7685;font-weight:700;display:block;margin:0 0 6px}
+    input, select, textarea{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:#fff;font-size:14px;color:#202b3a;outline:none}
+    textarea{min-height:90px;resize:vertical}
+    .btn{border:none;border-radius:14px;padding:12px 16px;font-weight:800;cursor:pointer}
+    .btn-primary{background:#e8edf3;color:#16243a}
+    .btn-yellow{background:var(--yellow);color:#111}
+    .btn-outline{background:#fff;border:1px solid var(--line);color:#16243a}
+    .btn-danger{background:#fff0f0;color:var(--danger);border:1px solid #f2cccc}
+    .btn-success{background:#e9f8ef;color:var(--success);border:1px solid #c8edd4}
+    .btn-small{padding:8px 12px;border-radius:10px;font-size:12px}
+    .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+    .metric{padding:16px 18px;min-height:95px}
+    .metric .label{font-size:14px;color:#7b8596;font-weight:700;margin-bottom:8px}
+    .metric .value{font-size:18px;font-weight:900}
+    .metric .sub{margin-top:6px;font-size:12px;color:#7b8596;font-weight:700}
+    .metric.leader-span{grid-column:3 / span 2;min-height:120px;display:flex;flex-direction:column;justify-content:center}
+    .metric.leader-span .label{margin-bottom:10px}
+    .metric.leader-span .leader-mini-name{font-size:22px;font-weight:900;line-height:1.2;margin-bottom:4px}
+    .metric.leader-span .leader-mini-meta{font-size:14px;color:#7b8596;font-weight:700}
+    .placeholder-pie-wrap{width:100%;height:100%;min-height:220px;display:flex;align-items:center;justify-content:center}
+    #placeholderPieChart{width:100%;height:220px;display:block}
 
+
+    .two-col{display:grid;grid-template-columns:1.55fr 1fr;gap:14px;margin-bottom:14px}
+    .box{padding:16px}
+    .box h3{margin:0 0 12px;font-size:16px}
+    .progress-row{margin:10px 0 14px}
+    .progress-row .row-top{display:flex;justify-content:space-between;font-weight:700;margin-bottom:6px}
+    .track{height:10px;background:#e6ebf1;border-radius:10px;overflow:hidden}
+    .bar{height:100%;background:var(--yellow);border-radius:10px}
+    .leader{background:#f8f0cc;border:1px solid #eacb67;border-radius:20px;padding:14px}
+    .leader small{color:#7b8596;font-weight:700}
+    .leader strong{display:block;font-size:20px;margin:10px 0 4px}
+    .tables{display:grid;grid-template-columns:1.5fr 1fr;gap:14px}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px 10px;border-bottom:1px solid #e9edf2;text-align:left;font-size:14px}
+    th{font-size:12px;color:#7c8694;text-transform:uppercase;letter-spacing:.04em}
+    .hidden{display:none !important}
+    .page{display:none}
+    .page.active{display:block}
+    .page-card{padding:18px}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+    .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:#f2f4f7;font-size:12px;font-weight:700}
+    .status{padding:5px 9px;border-radius:999px;font-size:12px;font-weight:800;display:inline-block}
+    .status.active{background:#e8f7ee;color:var(--success)}
+    .status.passive{background:#fff2f2;color:var(--danger)}
+    .status.pending{background:#f4f5f7;color:#667085}
+    .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:30px;background:linear-gradient(160deg,#f7f8fb,#eceff5)}
+    .login-card{width:100%;max-width:430px;padding:26px}
+    .login-card h2{margin:0 0 6px}
+    .login-card p{margin:0 0 18px;color:#707a89}
+    .muted{color:#758090}
+    .hr{height:1px;background:#e9edf2;margin:14px 0}
+    .right{text-align:right}
+    .empty{padding:18px;color:#788292;text-align:center}
+    .inline{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .user-top{display:flex;align-items:center;gap:10px;justify-content:flex-end;margin-bottom:8px}
+    .user-chip{padding:8px 12px;background:#fff;border:1px solid var(--line);border-radius:999px;font-weight:700}
+    .note{padding:12px 14px;background:#fff9df;border:1px solid #ecd876;border-radius:14px;color:#725f16;font-size:13px}
+    @media(max-width:1200px){.cards,.grid-4{grid-template-columns:repeat(2,1fr)}.two-col,.tables,.grid-3,.grid-2{grid-template-columns:1fr}.filter-row{grid-template-columns:1fr 1fr 1fr 120px}.sidebar{position:relative;width:100%;height:auto}.main{margin-left:0}.app{display:block}}
+    @media(max-width:700px){.cards,.grid-4{grid-template-columns:1fr}.filter-row{grid-template-columns:1fr}.main{padding:15px}.sidebar{padding:12px}}
+  
+
+#chatButton{
+  position:fixed;
+  right:20px;
+  bottom:20px;
+  width:60px;
+  height:60px;
+  border-radius:50%;
+  background:#f2c94c;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:24px;
+  cursor:pointer;
+  box-shadow:0 5px 15px rgba(0,0,0,0.2);
+  z-index:99999;
+  user-select:none;
+}
+#chatBox{
+  position:fixed;
+  right:20px;
+  bottom:90px;
+  width:320px;
+  height:420px;
+  background:#fff;
+  border-radius:16px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.2);
+  display:none;
+  flex-direction:column;
+  overflow:hidden;
+  z-index:99999;
+  border:1px solid #d9dde5;
+}
+#chatBox.open{
+  display:flex !important;
+}
+.chat-header{
+  background:#f2c94c;
+  padding:12px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-weight:bold;
+}
+.chat-header button{
+  border:none;
+  background:transparent;
+  font-size:16px;
+  cursor:pointer;
+}
+.chat-messages{
+  flex:1;
+  padding:10px;
+  overflow:auto;
+  font-size:13px;
+}
+.chat-input{
+  display:flex;
+  border-top:1px solid #ddd;
+}
+.chat-input input{
+  flex:1;
+  border:none;
+  padding:10px;
+}
+.chat-input button{
+  background:#f2c94c;
+  border:none;
+  padding:10px 14px;
+  cursor:pointer;
+}
+.chat-message{
+  margin-bottom:8px;
+  padding:8px 10px;
+  border-radius:10px;
+  background:#f7f7f7;
+}
+.chat-name{
+  font-weight:800;
+  display:block;
+  margin-bottom:3px;
+}
+
+</style>
+</head>
+<body>
+<div id="loginView" class="login-wrap">
+  <div class="panel-card login-card">
+    <div class="brand" style="margin-bottom:18px">
+      <div class="brand-badge">V</div>
+      <div>
+        <h1>Vurgan Panel</h1>
+        <p>Tek dosya HTML yönetim paneli</p>
+      </div>
+    </div>
+    <h2>Hoş geldiniz</h2>
+    <p>Yönetici ve personel giriş yapabilir. Bu sürüm tek dosyadır ve verileri tarayıcı hafızasında saklar.</p>
+    <div style="margin-bottom:12px">
+      <label>Kullanıcı adı</label>
+      <input id="loginUsername" placeholder="örn: admin" />
+    </div>
+    <div style="margin-bottom:16px">
+      <label>Şifre</label>
+      <input id="loginPassword" type="password" placeholder="Şifre" />
+    </div>
+    <button class="btn btn-yellow" style="width:100%" onclick="login()">Giriş Yap</button>
+    <div class="hr"></div>
+    <div class="note">
+      İlk giriş için: <b>admin / admin123</b>
+    </div>
+    <p id="loginMsg" class="muted" style="margin-top:12px"></p>
+  </div>
+</div>
+
+<div id="appView" class="app hidden">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-badge">V</div>
+      <div>
+        <h1>Vurgan Panel</h1>
+        <p><span id="userFullnameSide">-</span> · <span id="userRoleSide">-</span> · <span id="userBranchSide">-</span></p>
+      </div>
+    </div>
+
+    <div class="section-label">Ana Menü</div>
+    <button class="nav-btn active" data-page="dashboard">Dashboard</button>
+    <button class="nav-btn" data-page="data-entry">Personel Veri Girişi</button>
+    <button class="nav-btn" data-page="ranking">Genel Sıralama</button>
+    <button class="nav-btn" data-page="conversions">Dönüşümler</button>
+    
+
+    <div class="section-label">Yönetim</div>
+    <button class="nav-btn admin-only" data-page="staff">Personel Yönetimi</button>
+    <button class="nav-btn admin-only" data-page="targets">Hedefler</button>
+    <button class="nav-btn admin-only" data-page="leaves">İzinler</button>
+    <button class="nav-btn admin-only" data-page="settings">Sistem Ayarları</button>
+
+    <div class="section-label">Hesap</div>
+    <button class="nav-btn" data-page="password">Şifre Değiştir</button>
+    <button class="nav-btn" onclick="exportData()">Yedek Dışa Aktar</button>
+    <button class="nav-btn admin-only" onclick="document.getElementById('importFile').click()">Yedek İçe Aktar</button>
+    <button class="nav-btn" onclick="logout()">Çıkış Yap</button>
+    <input id="importFile" type="file" accept="application/json" class="hidden" />
+  </aside>
+
+  <main class="main">
+    <div class="user-top">
+      <div class="user-chip"><span id="userRoleTop"></span> · <span id="userNameTop"></span></div>
+      <button class="btn btn-outline btn-small" onclick="logout()">Çıkış</button>
+    </div>
+
+    <section id="page-dashboard" class="page active">
+      <div class="topbar">
+        <div class="title">
+          <h2>Dashboard</h2>
+          <p>Şube filtreli genel görünüm</p>
+        </div>
+        <div class="period-badge" id="periodBadge">Bugün · - / -</div>
+      </div>
+
+      <div class="panel-card filter-row">
+        <div>
+          <label>Şube</label>
+          <select id="filterBranch" onchange="syncPersonFilter(); renderAll()"></select>
+        </div>
+        <div>
+          <label>Personel</label>
+          <select id="filterPerson" onchange="renderAll()"></select>
+        </div>
+        <div>
+          <label>Başlangıç</label>
+          <input type="date" id="filterStart" onchange="renderAll()" />
+        </div>
+        <div>
+          <label>Bitiş</label>
+          <input type="date" id="filterEnd" onchange="renderAll()" />
+        </div>
+        <div>
+          <button class="btn btn-primary" style="width:100%" onclick="setYesterday()">Dün</button>
+        </div>
+        <div>
+          <button class="btn btn-primary" style="width:100%" onclick="setToday()">Bugün</button>
+        </div>
+        <div>
+          <button class="btn btn-primary" style="width:100%" onclick="setThisPeriod()">Periyot</button>
+        </div>
+        <div>
+          <button class="btn btn-primary" style="width:100%" onclick="setThisMonth()">Ay</button>
+        </div>
+        <div class="inline" style="justify-content:flex-end">
+          <span class="pill">Aktif kullanıcı: <span id="activeUserCounter">0</span></span>
+        </div>
+      </div>
+
+      <div class="cards" id="metricsWrap"></div>
+
+      <div class="two-col">
+        <div class="panel-card box">
+          <h3>Şube Ciro Dağılımı</h3>
+          <div id="branchDistribution"></div>
+        </div>
+        <div class="panel-card box">
+          <h3></h3>
+          <div id="leaderCard"></div>
+        </div>
+      </div>
+
+      <div class="tables">
+        <div class="panel-card box">
+          <h3>En Çok Ciro Yapan 3 Danışman</h3>
+          <table>
+            <thead><tr><th>#</th><th>Ad Soyad</th><th>Şube</th><th>Ciro</th></tr></thead>
+            <tbody id="topSalesTable"></tbody>
+          </table>
+        </div>
+        <div class="panel-card box">
+          <h3>En Çok Ciro Yapan Çağrı Personeli</h3>
+          <table>
+            <thead><tr><th>#</th><th>Ad Soyad</th><th>Şube</th><th>Ciro</th></tr></thead>
+            <tbody id="topCallTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="page-data-entry" class="page">
+      <div class="topbar">
+        <div class="title"><h2>Personel Veri Girişi</h2><p>Yönetici herkes adına giriş yapabilir.</p></div>
+      </div>
+      <div class="grid-2">
+        <div class="panel-card page-card">
+          <h3>Yeni veri girişi</h3>
+          <div class="grid-2">
+            <div><label>Tarih</label><input type="date" id="entryDate"></div>
+            <div><label>Personel</label><select id="entryPerson" onchange="syncEntryBranchToPerson()"></select></div>
+            <div><label>Şube</label><select id="entryBranch"></select></div>
+            <div><label>Departman</label><select id="entryDepartment"><option>Satış</option><option>Çağrı</option><option>Yönetim</option></select></div>
+            <div><label>Telefon</label><input type="number" id="entryPhone" min="0" value="0"></div>
+            <div><label>Randevu</label><input type="number" id="entryAppointment" min="0" value="0"></div>
+            <div><label>RandevuYY Görüşme</label><input type="number" id="entryYY" min="0" value="0"></div>
+            <div><label>Outdoor YY Görüşme</label><input type="number" id="entryOutdoorYY" min="0" value="0"></div>
+            <div><label>Kayıt</label><input type="number" id="entryRegistration" min="0" value="0"></div>
+            <div><label>Kur</label><input type="number" id="entryCourse" min="0" value="0"></div>
+            <div><label>Ciro</label><input type="number" id="entryRevenue" min="0" step="0.01" value="0"></div>
+            <div><label>Toplam Görüşme Süresi (dk)</label><input type="number" id="entryTalk" min="0" value="0"></div>
+            <div><label>Not</label><input id="entryNote" placeholder="İsteğe bağlı not"></div>
+          </div>
+          <div class="inline" style="margin-top:14px">
+            <button class="btn btn-yellow" onclick="saveEntry()">Kaydet</button>
+            <button class="btn btn-outline" onclick="resetEntryForm()">Temizle</button>
+          </div>
+          <p id="entryMsg" class="muted"></p>
+        </div>
+        <div class="panel-card page-card">
+          <h3>Son veri girişleri</h3>
+          <div style="overflow:auto">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tarih</th><th>Personel</th><th>Şube</th><th>Telefon</th><th>Randevu</th><th>RandevuYY</th><th>Outdoor YY</th><th>Kayıt</th><th>Kur</th><th>Ciro</th><th>Giren</th><th></th>
+                </tr>
+              </thead>
+              <tbody id="entriesTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="page-ranking" class="page">
+      <div class="topbar"><div class="title"><h2>Genel Sıralama</h2><p>Tüm personel performans listesi</p></div></div>
+      <div class="panel-card page-card">
+        <div class="toolbar">
+          <select id="rankingBranch" onchange="renderRanking()"></select>
+          <select id="rankingDepartment" onchange="renderRanking()"><option value="all">Tüm Departmanlar</option><option value="Satış">Satış</option><option value="Çağrı">Çağrı</option><option value="Yönetim">Yönetim</option></select>
+        </div>
+        <table>
+          <thead><tr><th>#</th><th>Ad Soyad</th><th>Şube</th><th>Departman</th><th>Telefon</th><th>Randevu</th><th>RandevuYY</th><th>Outdoor YY</th><th>Kayıt</th><th>Kur</th><th>Ciro</th><th>Görüşme</th></tr></thead>
+          <tbody id="rankingTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+
+    <section id="page-conversions" class="page">
+      <div class="topbar"><div class="title"><h2>Dönüşümler</h2><p>Arama → Randevu, Randevu → Şubeye Getirme, Görüşme → Kayıt oranları</p></div></div>
+      <div class="panel-card page-card">
+        <table>
+          <thead>
+            <tr>
+              <th>Ad Soyad</th>
+              <th>Şube</th>
+              <th>Departman</th>
+              <th>Arama &gt; Randevu</th>
+              <th>Randevu &gt; Şubeye Getirme</th>
+              <th>Görüşme &gt; Kayıt</th>
+            </tr>
+          </thead>
+          <tbody id="conversionsTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="page-call-center" class="page">
+      <div class="topbar"><div class="title"><h2></h2><p>Sadece çağrı personeli görünümü</p></div></div>
+      <div class="grid-3" id="callMetrics"></div>
+      <div class="panel-card page-card" style="margin-top:14px">
+        <table>
+          <thead><tr><th>Ad Soyad</th><th>Şube</th><th>Telefon</th><th>Randevu</th><th>YY</th><th>Kayıt</th><th>Ciro</th><th>Ortalama Ciro/Kayıt</th></tr></thead>
+          <tbody id="callCenterTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="page-staff" class="page admin-only-page">
+      <div class="topbar"><div class="title"><h2>Personel Yönetimi</h2><p>Aktif/pasif, kullanıcı oluşturma ve düzenleme</p></div></div>
+      <div class="grid-2">
+        <div class="panel-card page-card">
+          <h3>Yeni kullanıcı / personel</h3>
+          <div class="grid-2">
+            <div><label>Ad Soyad</label><input id="staffName"></div>
+            <div><label>Kullanıcı adı</label><input id="staffUsername"></div>
+            <div><label>Şifre</label><input id="staffPassword" type="password"></div>
+            <div><label>Rol</label><select id="staffRole"><option>Yönetici</option><option>Personel</option></select></div>
+            <div><label>Şube</label><select id="staffBranch"></select></div>
+            <div><label>Departman</label><select id="staffDepartment"><option>Satış</option><option>Çağrı</option><option>Yönetim</option></select></div>
+          </div>
+          <div class="inline" style="margin-top:14px">
+            <button class="btn btn-yellow" onclick="addStaff()">Kaydet</button>
+            <button class="btn btn-outline" onclick="clearStaffForm()">Temizle</button>
+          </div>
+          <p id="staffMsg" class="muted"></p>
+        </div>
+        <div class="panel-card page-card">
+          <h3>Tüm personel</h3>
+          <table>
+            <thead><tr><th>Ad Soyad</th><th>Rol</th><th>Şube</th><th>Departman</th><th>Durum</th><th></th></tr></thead>
+            <tbody id="staffTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="page-targets" class="page admin-only-page">
+      <div class="topbar"><div class="title"><h2>Hedefler</h2><p>Şube ve bireysel performans hedefleri</p></div></div>
+      <div class="grid-2">
+        <div class="panel-card page-card">
+          <h3>Hedef tanımı</h3>
+          <div class="grid-2">
+            <div>
+              <label>Hedef Tipi</label>
+              <select id="targetType" onchange="toggleTargetMode()">
+                <option value="branch">Şube Hedefi</option>
+                <option value="person">Bireysel Hedef</option>
+              </select>
+            </div>
+            <div><label>Şube</label><select id="targetBranch" onchange="refreshTargetPersonOptions()"></select></div>
+            <div id="targetPersonWrap" class="hidden"><label>Personel</label><select id="targetPerson"></select></div>
+            <div><label>Telefon Hedefi</label><input id="targetPhone" type="number" min="0"></div>
+            <div><label>Randevu Hedefi</label><input id="targetAppointment" type="number" min="0"></div>
+            <div><label>YY Hedefi</label><input id="targetYY" type="number" min="0"></div>
+            <div><label>Kayıt Hedefi</label><input id="targetRegistration" type="number" min="0"></div>
+            <div><label>Kur Hedefi</label><input id="targetCourse" type="number" min="0"></div>
+            <div><label>Ciro Hedefi (TL)</label><input id="targetRevenue" type="number" min="0"></div>
+            <div><label>Görüşme Hedefi (dk)</label><input id="targetTalk" type="number" min="0"></div>
+          </div>
+          <div class="inline" style="margin-top:14px"><button class="btn btn-yellow" onclick="saveTarget()">Kaydet</button></div>
+          <p id="targetMsg" class="muted"></p>
+        </div>
+        <div class="panel-card page-card">
+          <h3>Mevcut hedefler</h3>
+          <table>
+            <thead><tr><th>Tip</th><th>Şube / Personel</th><th>Telefon</th><th>Randevu</th><th>YY</th><th>Kayıt</th><th>Kur</th><th>Ciro</th><th>Görüşme</th><th></th></tr></thead>
+            <tbody id="targetsTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="page-leaves" class="page admin-only-page">
+      <div class="topbar"><div class="title"><h2>İzinler</h2><p>Basit izin takibi</p></div></div>
+      <div class="grid-2">
+        <div class="panel-card page-card">
+          <h3>İzin ekle</h3>
+          <div class="grid-2">
+            <div><label>Personel</label><select id="leavePerson"></select></div>
+            <div><label>Tür</label><select id="leaveType"><option>Yıllık İzin</option><option>Rapor</option><option>Mazeret</option></select></div>
+            <div><label>Başlangıç</label><input type="date" id="leaveStart"></div>
+            <div><label>Bitiş</label><input type="date" id="leaveEnd"></div>
+          </div>
+          <div style="margin-top:12px"><label>Açıklama</label><textarea id="leaveNote"></textarea></div>
+          <div class="inline" style="margin-top:14px"><button class="btn btn-yellow" onclick="addLeave()">Kaydet</button></div>
+        </div>
+        <div class="panel-card page-card">
+          <h3>İzin listesi</h3>
+          <table>
+            <thead><tr><th>Personel</th><th>Tür</th><th>Tarih</th><th>Açıklama</th><th></th></tr></thead>
+            <tbody id="leavesTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="page-settings" class="page admin-only-page">
+      <div class="topbar"><div class="title"><h2>Sistem Ayarları</h2><p>Temel şube ve dönem ayarları</p></div></div>
+      <div class="grid-2">
+        <div class="panel-card page-card">
+          <h3>Şube ekle</h3>
+          <label>Yeni şube adı</label>
+          <input id="newBranchName" placeholder="örn: Konya" />
+          <div class="inline" style="margin-top:14px"><button class="btn btn-yellow" onclick="addBranch()">Şube Ekle</button></div>
+        </div>
+        <div class="panel-card page-card">
+          <h3>Dönem bilgisi</h3>
+          <div class="grid-2">
+            <div><label>Periyot adı</label><input id="periodName"></div>
+            <div><label>Görünen metin</label><input id="periodText" placeholder="Otomatik oluşur"></div>
+            <div><label>Periyot başlangıç</label><input type="date" id="periodStart"></div>
+            <div><label>Periyot bitiş</label><input type="date" id="periodEnd"></div>
+          </div>
+          <div class="inline" style="margin-top:14px"><button class="btn btn-yellow" onclick="saveSettings()">Ayarları Kaydet</button></div>
+        </div>
+      </div>
+      <div class="panel-card page-card" style="margin-top:16px">
+        <h3>Mevcut şubeler</h3>
+        <div id="branchList" class="inline"></div>
+      </div>
+    </section>
+
+    <section id="page-password" class="page">
+      <div class="topbar"><div class="title"><h2>Şifre Değiştir</h2><p>Mevcut hesabınızın şifresini güncelleyin</p></div></div>
+      <div class="panel-card page-card" style="max-width:600px">
+        <div style="margin-bottom:12px"><label>Mevcut şifre</label><input type="password" id="oldPass"></div>
+        <div style="margin-bottom:12px"><label>Yeni şifre</label><input type="password" id="newPass"></div>
+        <div style="margin-bottom:12px"><label>Yeni şifre tekrar</label><input type="password" id="newPass2"></div>
+        <button class="btn btn-yellow" onclick="changePassword()">Şifreyi Güncelle</button>
+        <p id="passwordMsg" class="muted"></p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+const STORAGE_KEY = 'vurganPanelData_v5';
+let db = null;
+let currentUser = null;
+
+function defaultData(){
+  return {
+    settings: {
+      branches: ['Alanya','Ereğli','Karaman','Manavgat'],
+      periodName: 'Nisan 2026 Periyot 1',
+      periodStart: '2026-04-01',
+      periodEnd: '2026-04-15',
+      periodText: '2026-04-01 / 2026-04-15'
+    },
+    targets: {
+      branchTargets: {
+        'Alanya': {phone:1200, appointment:90, yy:45, registration:25, course:60, revenue:900000, talk:6000},
+        'Ereğli': {phone:700, appointment:50, yy:25, registration:15, course:30, revenue:400000, talk:3600},
+        'Karaman': {phone:950, appointment:70, yy:35, registration:20, course:45, revenue:650000, talk:4800},
+        'Manavgat': {phone:600, appointment:40, yy:20, registration:12, course:24, revenue:350000, talk:3000}
+      },
+      personTargets: {}
+    },
+    users: [
+      {id:id(), fullName:'Mustafa Yönetici', username:'admin', password:'admin123', role:'Yönetici', branch:'Alanya', department:'Yönetim', active:true},
+      {id:id(), fullName:'Gizem Küçük', username:'gizem', password:'1234', role:'Personel', branch:'Alanya', department:'Çağrı', active:true},
+      {id:id(), fullName:'Sümeyye Arslan', username:'sumeyye', password:'1234', role:'Personel', branch:'Alanya', department:'Çağrı', active:true},
+      {id:id(), fullName:'Öznur Köstek', username:'oznur', password:'1234', role:'Personel', branch:'Karaman', department:'Çağrı', active:true},
+      {id:id(), fullName:'Aziz Karhan', username:'aziz', password:'1234', role:'Personel', branch:'Alanya', department:'Satış', active:true},
+      {id:id(), fullName:'Ardıl Baydemir', username:'ardil', password:'1234', role:'Personel', branch:'Ereğli', department:'Satış', active:true}
+    ],
+    entries: [
+      {id:id(), date:'2026-04-04', personId:null, personName:'Mustafa Yönetici', branch:'Alanya', department:'Yönetim', phone:0, appointment:0, yy:1, registration:1, course:4, revenue:110000, talkMinutes:55, note:'Merkez satış kaydı', createdBy:'admin'},
+      {id:id(), date:'2026-04-04', personId:null, personName:'Mustafa Yönetici', branch:'Alanya', department:'Yönetim', phone:0, appointment:0, yy:2, registration:1, course:3, revenue:100000, talkMinutes:45, note:'Ek kayıt', createdBy:'admin'},
+      {id:id(), date:'2026-04-04', personId:null, personName:'Gizem Küçük', branch:'Alanya', department:'Çağrı', phone:25, appointment:0, yy:2, registration:1, course:3, revenue:65000, talkMinutes:95, note:'Sıcak lead', createdBy:'admin'},
+      {id:id(), date:'2026-04-04', personId:null, personName:'Sümeyye Arslan', branch:'Alanya', department:'Çağrı', phone:18, appointment:0, yy:0, registration:0, course:0, revenue:0, talkMinutes:74, note:'Takip', createdBy:'admin'},
+      {id:id(), date:'2026-04-04', personId:null, personName:'Öznur Köstek', branch:'Karaman', department:'Çağrı', phone:27, appointment:0, yy:0, registration:0, course:0, revenue:0, talkMinutes:88, note:'Arama', createdBy:'admin'}
+    ],
+    leaves: [
+      {id:id(), personName:'Aziz Karhan', type:'Yıllık İzin', start:'2026-04-10', end:'2026-04-12', note:'Aile ziyareti'}
+    ]
+  }
+}
+
+function id(){ return Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4); }
+function load(){ db = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null') || defaultData(); normalizeTargets(); normalizeDepartments(); normalizeEntries(); normalizeSettings(); save(); }
+function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }
+function normalizeTargetValue(value){
+  if(value && typeof value === 'object'){
+    return {
+      phone: Number(value.phone ?? value.call ?? 0),
+      appointment: Number(value.appointment ?? 0),
+      yy: Number(value.yy ?? value.visit ?? 0),
+      registration: Number(value.registration ?? 0),
+      course: Number(value.course ?? 0),
+      revenue: Number(value.revenue ?? 0),
+      talk: Number(value.talk ?? 0)
+    };
+  }
+  return {phone:0, appointment:0, yy:0, registration:0, course:0, revenue:Number(value||0), talk:0};
+}
+function normalizeTargets(){
+  if(!db.targets || typeof db.targets !== 'object') db.targets = {};
+  if(!db.targets.branchTargets && !db.targets.personTargets){
+    const legacy = db.targets;
+    db.targets = { branchTargets:{}, personTargets:{} };
+    Object.keys(legacy || {}).forEach(branch=>{
+      db.targets.branchTargets[branch] = normalizeTargetValue(legacy[branch]);
+    });
+  }
+  if(!db.targets.branchTargets || typeof db.targets.branchTargets !== 'object') db.targets.branchTargets = {};
+  if(!db.targets.personTargets || typeof db.targets.personTargets !== 'object') db.targets.personTargets = {};
+  db.settings.branches.forEach(branch=>{
+    db.targets.branchTargets[branch] = normalizeTargetValue(db.targets.branchTargets[branch]);
+  });
+  Object.keys(db.targets.personTargets).forEach(pid=>{
+    db.targets.personTargets[pid] = normalizeTargetValue(db.targets.personTargets[pid]);
+  });
+}
+
+function normalizeDepartments(){
+  db.users.forEach(u=>{
+    if(u.department === '') u.department = 'Çağrı';
+  });
+  db.entries.forEach(e=>{
+    if(e.department === '') e.department = 'Çağrı';
+  });
+}
+function normalizeSettings(){
+  if(!db.settings.periodStart) db.settings.periodStart = monthStart();
+  if(!db.settings.periodEnd) db.settings.periodEnd = today();
+  db.settings.periodText = `${db.settings.periodStart} / ${db.settings.periodEnd}`;
+}
+function getCurrentPeriodRange(){
+  const start = db?.settings?.periodStart || monthStart();
+  const end = db?.settings?.periodEnd || today();
+  return { start, end };
+}
+function percentText(actual, target){
+  actual = Number(actual || 0);
+  target = Number(target || 0);
+  if(target <= 0) return '%0';
+  return '%' + Math.round((actual / target) * 100);
+}
+
+function conversionRate(numerator, denominator){
+  numerator = Number(numerator || 0);
+  denominator = Number(denominator || 0);
+  if(denominator <= 0) return '%0';
+  return '%' + new Intl.NumberFormat('tr-TR', {maximumFractionDigits: 1}).format((numerator / denominator) * 100);
+}
+function getSelectedTarget(){
+  const selectedBranch = q('filterBranch')?.value || 'all';
+  const selectedPersonId = q('filterPerson')?.value || 'all';
+  const blank = {phone:0, appointment:0, yy:0, registration:0, course:0, revenue:0, talk:0};
+  if(selectedPersonId !== 'all'){
+    return normalizeTargetValue(db.targets?.personTargets?.[selectedPersonId] || blank);
+  }
+  if(selectedBranch === 'all'){
+    return db.settings.branches.reduce((acc, branch)=>{
+      const t = normalizeTargetValue(db.targets?.branchTargets?.[branch] || blank);
+      Object.keys(blank).forEach(k=>acc[k]+=Number(t[k]||0));
+      return acc;
+    }, {...blank});
+  }
+  return normalizeTargetValue(db.targets?.branchTargets?.[selectedBranch] || blank);
+}
+function formatMetricWithTarget(value, target, isTL=false, suffix=''){
+  const formatted = isTL ? formatTL(value) : `${formatInt(value)}${suffix}`;
+  return `${formatted}<div class="sub">Hedefe yaklaşım: ${percentText(value, target)}</div>`;
+}
+function getRankingEntries(){
+  const start = q('filterStart')?.value || '';
+  const end = q('filterEnd')?.value || '';
+  return db.entries.filter(e=>{
+    if(currentUser.role!=='Yönetici' && e.personName !== currentUser.fullName) return false;
+    return inRange(e.date,start,end);
+  });
+}
+
+function q(id){ return document.getElementById(id); }
+function formatTL(n){ return new Intl.NumberFormat('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(n||0)) + ' ₺'; }
+function formatInt(n){ return new Intl.NumberFormat('tr-TR').format(Number(n||0)); }
+function today(){
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+function yesterday(){
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+function monthStart(){
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  return `${yyyy}-${mm}-01`;
+}
+function monthEnd(){
+  const d = new Date();
+  const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+  const yyyy = lastDay.getFullYear();
+  const mm = String(lastDay.getMonth() + 1).padStart(2, '0');
+  const dd = String(lastDay.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+function inRange(date,start,end){ return (!start || date>=start) && (!end || date<=end); }
+function getPeriodRange(){
+  return getCurrentPeriodRange();
+}
+function updatePeriodBadge(){
+  const start = q('filterStart')?.value || '';
+  const end = q('filterEnd')?.value || '';
+  const todayValue = today();
+  const yesterdayValue = yesterday();
+  const monthValue = monthStart();
+  const monthEndValue = monthEnd();
+  const period = getCurrentPeriodRange();
+  let label = 'Özel Aralık';
+  if(start === yesterdayValue && end === yesterdayValue){
+    label = 'Dün';
+  }else if(start === todayValue && end === todayValue){
+    label = 'Bugün';
+  }else if(start === period.start && end === period.end){
+    label = 'Periyot';
+  }else if(start === monthValue && end === monthEndValue){
+    label = 'Ay';
+  }
+  q('periodBadge').textContent = `${label} · ${start || '-'} / ${end || '-'}`;
+}
+function activeUsers(){ return db.users.filter(u=>u.active); }
+function branchOptions(selectId, includeAll=false){
+  const sel=q(selectId); if(!sel) return;
+  sel.innerHTML = '';
+  if(includeAll) sel.append(new Option('Tüm Şubeler','all'));
+  db.settings.branches.forEach(b=>sel.append(new Option(b,b)));
+}
+function personOptions(selectId, allowOnlyActive=true){
+  const sel=q(selectId); if(!sel) return;
+  const users = db.users.filter(u => !allowOnlyActive || u.active);
+  sel.innerHTML='';
+  users.forEach(u=>{
+    if(currentUser?.role !== 'Yönetici' && u.id !== currentUser.id) return;
+    sel.append(new Option(`${u.fullName} (${u.branch})`, u.id));
+  });
+}
+
+function syncEntryBranchToPerson(){
+  const personSelect = q('entryPerson');
+  const branchSelect = q('entryBranch');
+  if(!personSelect || !branchSelect) return;
+  const user = db.users.find(u => u.id === personSelect.value);
+  if(!user) return;
+
+  if(currentUser?.role === 'Yönetici'){
+    branchSelect.value = user.branch || branchSelect.value;
+    branchSelect.disabled = false;
+  }else{
+    branchSelect.value = user.branch || branchSelect.value;
+    branchSelect.disabled = true;
+  }
+}
+
+function getUsersByBranch(branch, onlyActive=true){
+  return db.users.filter(u => (!onlyActive || u.active) && (!branch || branch==='all' || u.branch===branch));
+}
+function syncPersonFilter(){
+  const sel = q('filterPerson');
+  if(!sel) return;
+  const current = sel.value || 'all';
+  const selectedBranch = q('filterBranch')?.value || 'all';
+  sel.innerHTML = '';
+  sel.append(new Option('Tüm Personel','all'));
+  getUsersByBranch(selectedBranch, true).forEach(u=>{
+    sel.append(new Option(u.fullName, u.id));
+  });
+  sel.value = Array.from(sel.options).some(o=>o.value===current) ? current : 'all';
+}
+function refreshTargetPersonOptions(){
+  const sel = q('targetPerson');
+  if(!sel) return;
+  const current = sel.value || '';
+  const selectedBranch = q('targetBranch')?.value || 'all';
+  sel.innerHTML = '';
+  getUsersByBranch(selectedBranch, true).forEach(u=>{
+    sel.append(new Option(u.fullName, u.id));
+  });
+  if(current && Array.from(sel.options).some(o=>o.value===current)) sel.value = current;
+}
+function toggleTargetMode(){
+  const type = q('targetType')?.value || 'branch';
+  const wrap = q('targetPersonWrap');
+  if(wrap) wrap.classList.toggle('hidden', type !== 'person');
+  refreshTargetPersonOptions();
+}
+function populateStaticInputs(){
+  const prevFilterBranch = q('filterBranch')?.value || 'all';
+  const prevRankingBranch = q('rankingBranch')?.value || 'all';
+  const prevEntryBranch = q('entryBranch')?.value || '';
+  const prevStaffBranch = q('staffBranch')?.value || '';
+  const prevTargetBranch = q('targetBranch')?.value || '';
+  const prevFilterStart = q('filterStart')?.value || '';
+  const prevFilterEnd = q('filterEnd')?.value || '';
+  const prevEntryDate = q('entryDate')?.value || '';
+  const prevLeaveStart = q('leaveStart')?.value || '';
+  const prevLeaveEnd = q('leaveEnd')?.value || '';
+
+  ['filterBranch','rankingBranch'].forEach(id=>branchOptions(id,true));
+  ['entryBranch','staffBranch','targetBranch'].forEach(id=>branchOptions(id,false));
+  personOptions('entryPerson');
+  personOptions('leavePerson');
+
+  if(q('filterBranch')) q('filterBranch').value = db.settings.branches.includes(prevFilterBranch) ? prevFilterBranch : 'all';
+  if(q('rankingBranch')) q('rankingBranch').value = db.settings.branches.includes(prevRankingBranch) ? prevRankingBranch : 'all';
+  if(q('entryBranch')){
+    if(currentUser?.role === 'Yönetici'){
+      q('entryBranch').value = db.settings.branches.includes(prevEntryBranch) ? prevEntryBranch : (db.settings.branches[0] || '');
+      q('entryBranch').disabled = false;
+    }else{
+      q('entryBranch').value = currentUser?.branch || (db.settings.branches[0] || '');
+      q('entryBranch').disabled = true;
+    }
+  }
+  if(q('staffBranch')) q('staffBranch').value = db.settings.branches.includes(prevStaffBranch) ? prevStaffBranch : (db.settings.branches[0] || '');
+  if(q('targetBranch')) q('targetBranch').value = db.settings.branches.includes(prevTargetBranch) ? prevTargetBranch : (db.settings.branches[0] || '');
+
+  q('filterStart').value = prevFilterStart || today();
+  q('filterEnd').value = prevFilterEnd || today();
+  q('entryDate').value = prevEntryDate || today();
+  q('leaveStart').value = prevLeaveStart || today();
+  q('leaveEnd').value = prevLeaveEnd || today();
+  q('periodName').value = db.settings.periodName;
+  q('periodStart').value = db.settings.periodStart || '';
+  q('periodEnd').value = db.settings.periodEnd || '';
+  q('periodText').value = db.settings.periodText;
+  syncPersonFilter();
+  syncEntryBranchToPerson();
+  updatePeriodBadge();
+}
+
+function login(){
+  const username=q('loginUsername').value.trim();
+  const password=q('loginPassword').value;
+  const user=db.users.find(u=>u.username===username && u.password===password);
+  if(!user){ q('loginMsg').textContent='Kullanıcı adı veya şifre hatalı.'; return; }
+  if(!user.active){ q('loginMsg').textContent='Bu kullanıcı pasif durumda.'; return; }
+  currentUser = user;
+  q('loginView').classList.add('hidden');
+  q('appView').classList.remove('hidden');
+  updateUserUI();
+  afterLoginRender();
+}
+function logout(){ currentUser=null; q('appView').classList.add('hidden'); q('loginView').classList.remove('hidden'); q('loginPassword').value=''; }
+function updateUserUI(){
+  q('userFullnameSide').textContent=currentUser.fullName;
+  q('userRoleSide').textContent=currentUser.role;
+  q('userBranchSide').textContent=currentUser.branch;
+  q('userRoleTop').textContent=currentUser.role;
+  q('userNameTop').textContent=currentUser.fullName;
+  document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden', currentUser.role!=='Yönetici'));
+  document.querySelectorAll('.admin-only-page').forEach(el=>el.classList.toggle('hidden', currentUser.role!=='Yönetici'));
+}
+function afterLoginRender(){ populateStaticInputs(); bindNav(); setToday(); }
+function bindNav(){
+  document.querySelectorAll('.nav-btn[data-page]').forEach(btn=>{
+    btn.onclick=()=>{
+      if(btn.classList.contains('admin-only') && currentUser.role!=='Yönetici') return;
+      document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
+      btn.classList.add('active');
+      const page=btn.dataset.page;
+      document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+      q('page-'+page).classList.add('active');
+      if(page==='ranking') renderRanking();
+      if(page==='conversions') renderConversions();
+      if(page==='call-center') renderCallCenter();
+      if(page==='staff') renderStaff();
+      if(page==='targets') renderTargets();
+      if(page==='leaves') renderLeaves();
+      if(page==='settings') renderSettings();
+    }
+  });
+}
+function filteredEntries(){
+  const branch = q('filterBranch')?.value || 'all';
+  const personId = q('filterPerson')?.value || 'all';
+  const start = q('filterStart')?.value || '';
+  const end = q('filterEnd')?.value || '';
+  return db.entries.filter(e=>{
+    if(currentUser.role!=='Yönetici' && e.personName !== currentUser.fullName) return false;
+    const matchBranch = branch === 'all' || e.branch === branch;
+    const selectedUser = db.users.find(u=>u.id===personId);
+    const matchPerson = personId === 'all' || e.personId === personId || (selectedUser && e.personName === selectedUser.fullName);
+    return matchBranch && matchPerson && inRange(e.date,start,end);
+  });
+}
+function sum(arr,key){ return arr.reduce((a,b)=>a+Number(b[key]||0),0); }
+function renderDashboard(){
+  updatePeriodBadge();
+  const entries = filteredEntries();
+  const revenue = sum(entries,'revenue');
+  const appointment = sum(entries,'appointment');
+  const yy = sum(entries,'yy');
+  const registration = sum(entries,'registration');
+  const course = sum(entries,'course');
+  const phone = sum(entries,'phone');
+  const talk = sum(entries,'talkMinutes');
+  const target = getSelectedTarget();
+  const leaderboard = aggregateByPerson(entries).sort((a,b)=>b.revenue-a.revenue);
+  const leaderHtml = leaderboard.length ? `
+    <div class="leader-mini-name">🏆 ${leaderboard[0].name}</div>
+    <div class="leader-mini-meta">${leaderboard[0].branch} · ${formatTL(leaderboard[0].revenue)}</div>
+  ` : `<div class="leader-mini-meta">Veri yok</div>`;
+
+  q('metricsWrap').innerHTML = `
+    <div class="panel-card metric"><div class="label">Telefon</div><div class="value">${formatMetricWithTarget(phone, target.phone)}</div></div>
+    <div class="panel-card metric"><div class="label">Randevu</div><div class="value">${formatMetricWithTarget(appointment, target.appointment)}</div></div>
+    <div class="panel-card metric"><div class="label">YY</div><div class="value">${formatMetricWithTarget(yy, target.yy)}</div></div>
+    <div class="panel-card metric"><div class="label">Kayıt</div><div class="value">${formatMetricWithTarget(registration, target.registration)}</div></div>
+    <div class="panel-card metric"><div class="label">Kur</div><div class="value">${formatMetricWithTarget(course, target.course)}</div></div>
+    <div class="panel-card metric"><div class="label">Ciro</div><div class="value">${formatMetricWithTarget(revenue, target.revenue, true)}</div></div>
+    <div class="panel-card metric leader-span"><div class="label">Periyot Lideri 🏆</div><div class="value">${leaderHtml}</div></div>
+  `;
+  q('activeUserCounter').textContent = activeUsers().length;
+
+  const dist = db.settings.branches.map(branch=>{
+    const total = entries.filter(e=>e.branch===branch).reduce((a,b)=>a+Number(b.revenue||0),0);
+    const max = Math.max(...db.settings.branches.map(b=> entries.filter(e=>e.branch===b).reduce((a,x)=>a+Number(x.revenue||0),0)),1);
+    return {branch,total,pct:Math.round((total/max)*100)};
+  }).sort((a,b)=>b.total-a.total);
+  q('branchDistribution').innerHTML = dist.map(d=>`
+    <div class="progress-row"><div class="row-top"><span>${d.branch}</span><span>${formatTL(d.total)}</span></div><div class="track"><div class="bar" style="width:${d.pct}%"></div></div></div>
+  `).join('');
+
+  q('leaderCard').innerHTML = '<div class="placeholder-pie-wrap"><canvas id="placeholderPieChart"></canvas></div>';
+  renderPlaceholderPieChart(entries);
+
+  const sales = leaderboard.filter(x=>x.department!=='Çağrı').slice(0,3);
+  q('topSalesTable').innerHTML = sales.length ? sales.map((p,i)=>`<tr><td>${i+1}</td><td>${p.name}</td><td>${p.branch}</td><td>${formatTL(p.revenue)}</td></tr>`).join('') : '<tr><td colspan="4" class="empty">Veri yok</td></tr>';
+  const calls = leaderboard.filter(x=>x.department==='Çağrı').slice(0,1);
+  q('topCallTable').innerHTML = calls.length ? calls.map((p,i)=>`<tr><td>${i+1}</td><td>${p.name}</td><td>${p.branch}</td><td>${formatTL(p.revenue)}</td></tr>`).join('') : '<tr><td colspan="4" class="empty">Veri yok</td></tr>';
+}
+function aggregateByPerson(entries){
+  const map={};
+  entries.forEach(e=>{
+    const k=e.personName;
+    if(!map[k]) map[k]={name:e.personName,branch:e.branch,department:e.department,phone:0,appointment:0,yy:0,outdoorYY:0,registration:0,course:0,revenue:0,talkMinutes:0};
+    ['phone','appointment','yy','outdoorYY','registration','course','revenue','talkMinutes'].forEach(key=> map[k][key]+=Number(e[key]||0));
+  });
+  return Object.values(map);
+}
+
+function renderPlaceholderPieChart(entries){
+  const canvas = q('placeholderPieChart');
+  if(!canvas) return;
+
+  const dist = db.settings.branches.map(branch => ({
+    branch,
+    total: entries.filter(e => e.branch === branch).reduce((a,b)=>a+Number(b.revenue||0),0)
+  })).filter(x => x.total > 0).sort((a,b)=>b.total-a.total);
+
+  const ctx = canvas.getContext('2d');
+  const ratio = window.devicePixelRatio || 1;
+  const cssWidth = Math.max((canvas.parentElement?.clientWidth || 520) - 8, 520);
+  const cssHeight = 220;
+
+  canvas.width = cssWidth * ratio;
+  canvas.height = cssHeight * ratio;
+  canvas.style.width = cssWidth + 'px';
+  canvas.style.height = cssHeight + 'px';
+
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  ctx.clearRect(0, 0, cssWidth, cssHeight);
+
+  const totalRevenue = dist.reduce((sum, item) => sum + Number(item.total || 0), 0);
+  if(totalRevenue <= 0){
+    ctx.fillStyle = '#788292';
+    ctx.font = '16px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('Gösterilecek ciro verisi yok', cssWidth / 2, cssHeight / 2);
+    return;
+  }
+
+  const colors = ['#f2c94c','#16243a','#8aa3b8','#d9dde5','#6c7a89','#c7a94a'];
+  const cx = 165;
+  const cy = 112;
+  const radius = 95;
+  let startAngle = -Math.PI / 2;
+
+  dist.forEach((item, index) => {
+    const value = Number(item.total || 0);
+    const sliceAngle = (value / totalRevenue) * Math.PI * 2;
+    const endAngle = startAngle + sliceAngle;
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, radius, startAngle, endAngle);
+    ctx.closePath();
+    ctx.fillStyle = colors[index % colors.length];
+    ctx.fill();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    const midAngle = startAngle + sliceAngle / 2;
+    const labelRadius = radius * 0.64;
+    const lx = cx + Math.cos(midAngle) * labelRadius;
+    const ly = cy + Math.sin(midAngle) * labelRadius;
+    const pct = ((value / totalRevenue) * 100).toFixed(1).replace('.', ',') + '%';
+
+    ctx.save();
+    ctx.fillStyle = '#111111';
+    ctx.font = '10px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(item.branch, lx, ly - 8);
+    ctx.font = '10px Arial';
+    ctx.fillText(pct, lx, ly + 9);
+    ctx.restore();
+
+    startAngle = endAngle;
+  });
+
+  ctx.beginPath();
+  ctx.arc(cx, cy, 34, 0, Math.PI * 2);
+  ctx.fillStyle = '#ffffff';
+  ctx.fill();
+
+  ctx.fillStyle = '#16243a';
+  ctx.font = '10px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText('Toplam', cx, cy - 4);
+  ctx.font = 'bold 10px Arial';
+  ctx.fillText(formatTL(totalRevenue), cx, cy + 12);
+
+  const legendX = 295;
+  let legendY = 58;
+  dist.forEach((item, index) => {
+    const value = Number(item.total || 0);
+    const pct = ((value / totalRevenue) * 100).toFixed(1).replace('.', ',') + '%';
+
+    ctx.fillStyle = colors[index % colors.length];
+    ctx.fillRect(legendX, legendY - 10, 14, 14);
+
+    ctx.fillStyle = '#16243a';
+    ctx.font = '12px Arial';
+    ctx.textAlign = 'left';
+    ctx.fillText(item.branch, legendX + 22, legendY);
+    ctx.font = '12px Arial';
+    ctx.fillText(pct, legendX + 125, legendY);
+
+    legendY += 30;
+  });
+}
+
+function renderEntries(){
+  const entries = [...db.entries].filter(e=> currentUser.role==='Yönetici' || e.personName===currentUser.fullName).sort((a,b)=> b.date.localeCompare(a.date));
+  q('entriesTable').innerHTML = entries.length ? entries.slice(0,25).map(e=>`<tr>
+    <td>${e.date}</td><td>${e.personName}</td><td>${e.branch}</td><td>${formatInt(e.phone)}</td><td>${formatInt(e.appointment)}</td><td>${formatInt(e.yy)}</td><td>${formatInt(e.outdoorYY)}</td><td>${formatInt(e.registration)}</td><td>${formatInt(e.course)}</td><td>${formatTL(e.revenue)}</td><td>${e.createdBy}</td>
+    <td>${currentUser.role==='Yönetici' ? `<button class="btn btn-danger btn-small" onclick="deleteEntry('${e.id}')">Sil</button>`:''}</td>
+  </tr>`).join('') : '<tr><td colspan="12" class="empty">Kayıt yok</td></tr>';
+}
+function renderRanking(){
+  const prevBranch = q('rankingBranch')?.value || 'all';
+  branchOptions('rankingBranch',true);
+  if(q('rankingBranch')) q('rankingBranch').value = db.settings.branches.includes(prevBranch) ? prevBranch : 'all';
+  const branch=q('rankingBranch').value||'all';
+  const dep=q('rankingDepartment').value||'all';
+
+  const aggregated = aggregateByPerson(getRankingEntries());
+  const map = {};
+  aggregated.forEach(p => { map[p.name] = p; });
+
+  db.users
+    .filter(u => u.active)
+    .forEach(u => {
+      if(currentUser.role !== 'Yönetici' && u.id !== currentUser.id) return;
+      if(!map[u.fullName]){
+        map[u.fullName] = {
+          name: u.fullName,
+          branch: u.branch,
+          department: u.department,
+          phone: 0,
+          appointment: 0,
+          yy: 0,
+          outdoorYY: 0,
+          registration: 0,
+          course: 0,
+          revenue: 0,
+          talkMinutes: 0
+        };
+      }
+    });
+
+  const list=Object.values(map)
+    .filter(p=>(branch==='all'||p.branch===branch) && (dep==='all'||p.department===dep))
+    .sort((a,b)=>b.revenue-a.revenue);
+  q('rankingTable').innerHTML = list.length ? list.map((p,i)=>{
+    const user = db.users.find(u=>u.fullName===p.name);
+    const target = normalizeTargetValue(db.targets?.personTargets?.[user?.id] || db.targets?.branchTargets?.[p.branch] || {});
+    return `<tr>
+      <td>${i+1}</td>
+      <td>${p.name}</td>
+      <td>${p.branch}</td>
+      <td>${p.department}</td>
+      <td>${formatInt(p.phone)} (${percentText(p.phone,target.phone)})</td>
+      <td>${formatInt(p.appointment)} (${percentText(p.appointment,target.appointment)})</td>
+      <td>${formatInt(p.yy)} (${percentText(p.yy,target.yy)})</td>
+      <td>${formatInt(p.outdoorYY)}</td>
+      <td>${formatInt(p.registration)} (${percentText(p.registration,target.registration)})</td>
+      <td>${formatInt(p.course)} (${percentText(p.course,target.course)})</td>
+      <td>${formatTL(p.revenue)} (${percentText(p.revenue,target.revenue)})</td>
+      <td>${formatInt(p.talkMinutes)} dk (${percentText(p.talkMinutes,target.talk)})</td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="12" class="empty">Veri yok</td></tr>';
+}
+
+function renderConversions(){
+  const branch = q('rankingBranch')?.value || 'all';
+  const dep = q('rankingDepartment')?.value || 'all';
+
+  const aggregated = aggregateByPerson(getRankingEntries());
+  const map = {};
+  aggregated.forEach(p => { map[p.name] = p; });
+
+  db.users
+    .filter(u => u.active)
+    .forEach(u => {
+      if(currentUser.role !== 'Yönetici' && u.id !== currentUser.id) return;
+      if(!map[u.fullName]){
+        map[u.fullName] = {
+          name: u.fullName,
+          branch: u.branch,
+          department: u.department,
+          phone: 0,
+          appointment: 0,
+          yy: 0,
+          outdoorYY: 0,
+          registration: 0,
+          course: 0,
+          revenue: 0,
+          talkMinutes: 0
+        };
+      }
+    });
+
+  const list = Object.values(map)
+    .filter(p => (branch === 'all' || p.branch === branch) && (dep === 'all' || p.department === dep))
+    .sort((a,b)=>b.revenue-a.revenue || a.name.localeCompare(b.name,'tr'));
+
+  q('conversionsTable').innerHTML = list.length ? list.map(p => {
+    const totalGorusme = Number(p.yy || 0) + Number(p.outdoorYY || 0);
+    return `<tr>
+      <td>${p.name}</td>
+      <td>${p.branch}</td>
+      <td>${p.department}</td>
+      <td>${conversionRate(p.appointment, p.phone)}</td>
+      <td>${conversionRate(p.yy, p.appointment)}</td>
+      <td>${conversionRate(p.registration, totalGorusme)}</td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="6" class="empty">Veri yok</td></tr>';
+}
+
+function renderCallCenter(){
+  const list=aggregateByPerson(filteredEntries()).filter(p=>p.department==='Çağrı').sort((a,b)=>b.revenue-a.revenue);
+  const totals={phone:sum(list,'phone'), appointment:sum(list,'appointment'), yy:sum(list,'yy'), revenue:sum(list,'revenue')};
+  q('callMetrics').innerHTML = [
+    ['Toplam Telefon', formatInt(totals.phone)],
+    ['Toplam YY', formatInt(totals.yy)],
+    ['Toplam Ciro', formatTL(totals.revenue)]
+  ].map(m=>`<div class="panel-card metric"><div class="label">${m[0]}</div><div class="value">${m[1]}</div></div>`).join('');
+  q('callCenterTable').innerHTML = list.length ? list.map(p=>`<tr><td>${p.name}</td><td>${p.branch}</td><td>${formatInt(p.phone)}</td><td>${formatInt(p.appointment)}</td><td>${formatInt(p.yy)}</td><td>${formatInt(p.registration)}</td><td>${formatTL(p.revenue)}</td><td>${p.registration ? formatTL(p.revenue/p.registration) : '0,00 ₺'}</td></tr>`).join('') : '<tr><td colspan="8" class="empty">Veri yok</td></tr>';
+}
+function renderStaff(){
+  personOptions('leavePerson');
+  q('staffTable').innerHTML = db.users.map(u=>`<tr>
+    <td>${u.fullName}<div class="muted">@${u.username}</div></td>
+    <td>${u.role}</td><td>${u.branch}</td><td>${u.department}</td>
+    <td><span class="status ${u.active?'active':'passive'}">${u.active?'Aktif':'Pasif'}</span></td>
+    <td class="right">${u.username!=='admin' ? `<button class="btn ${u.active?'btn-danger':'btn-success'} btn-small" onclick="toggleUser('${u.id}')">${u.active?'Pasife Çek':'Aktif Et'}</button>`:''}</td>
+  </tr>`).join('');
+}
+function editBranchTarget(branch){
+  q('targetType').value = 'branch';
+  toggleTargetMode();
+  q('targetBranch').value = branch;
+  const t = normalizeTargetValue(db.targets.branchTargets[branch]);
+  q('targetPhone').value = t.phone;
+  q('targetAppointment').value = t.appointment;
+  q('targetYY').value = t.yy;
+  q('targetRegistration').value = t.registration;
+  q('targetCourse').value = t.course;
+  q('targetRevenue').value = t.revenue;
+  q('targetTalk').value = t.talk;
+}
+function editPersonTarget(personId){
+  const user = db.users.find(u=>u.id===personId);
+  if(!user) return;
+  q('targetType').value = 'person';
+  toggleTargetMode();
+  q('targetBranch').value = user.branch;
+  refreshTargetPersonOptions();
+  q('targetPerson').value = personId;
+  const t = normalizeTargetValue(db.targets.personTargets[personId]);
+  q('targetPhone').value = t.phone;
+  q('targetAppointment').value = t.appointment;
+  q('targetYY').value = t.yy;
+  q('targetRegistration').value = t.registration;
+  q('targetCourse').value = t.course;
+  q('targetRevenue').value = t.revenue;
+  q('targetTalk').value = t.talk;
+}
+function renderTargets(){
+  const tbody = q('targetsTable');
+  if(!tbody) return;
+  const rows = [];
+  db.settings.branches.forEach(branch=>{
+    const t = normalizeTargetValue(db.targets.branchTargets[branch]);
+    rows.push(`<tr>
+      <td>Şube</td>
+      <td>${branch}</td>
+      <td>${formatInt(t.phone)}</td>
+      <td>${formatInt(t.appointment)}</td>
+      <td>${formatInt(t.yy)}</td>
+      <td>${formatInt(t.registration)}</td>
+      <td>${formatInt(t.course)}</td>
+      <td>${formatTL(t.revenue)}</td>
+      <td>${formatInt(t.talk)} dk</td>
+      <td><button class="btn btn-outline btn-small" onclick="editBranchTarget('${branch.replace(/'/g,"\\'")}')">Düzenle</button></td>
+    </tr>`);
+  });
+  Object.keys(db.targets.personTargets || {}).forEach(personId=>{
+    const user = db.users.find(u=>u.id===personId);
+    if(!user) return;
+    const t = normalizeTargetValue(db.targets.personTargets[personId]);
+    rows.push(`<tr>
+      <td>Bireysel</td>
+      <td>${user.fullName} <span class="muted">· ${user.branch}</span></td>
+      <td>${formatInt(t.phone)}</td>
+      <td>${formatInt(t.appointment)}</td>
+      <td>${formatInt(t.yy)}</td>
+      <td>${formatInt(t.registration)}</td>
+      <td>${formatInt(t.course)}</td>
+      <td>${formatTL(t.revenue)}</td>
+      <td>${formatInt(t.talk)} dk</td>
+      <td><button class="btn btn-outline btn-small" onclick="editPersonTarget('${personId}')">Düzenle</button></td>
+    </tr>`);
+  });
+  tbody.innerHTML = rows.join('') || `<tr><td colspan="10" class="empty">Hedef yok</td></tr>`;
+}
+function renderLeaves(){
+  personOptions('leavePerson');
+  q('leavesTable').innerHTML = db.leaves.length ? db.leaves.map(l=>`<tr><td>${l.personName}</td><td>${l.type}</td><td>${l.start} / ${l.end}</td><td>${l.note||''}</td><td class="right"><button class="btn btn-danger btn-small" onclick="deleteLeave('${l.id}')">Sil</button></td></tr>`).join('') : '<tr><td colspan="5" class="empty">İzin yok</td></tr>';
+}
+function renderSettings(){
+  q('periodName').value = db.settings.periodName;
+  q('periodStart').value = db.settings.periodStart || '';
+  q('periodEnd').value = db.settings.periodEnd || '';
+  q('periodText').value = db.settings.periodText;
+  q('branchList').innerHTML = db.settings.branches.map(b=>`<span class="pill">${b}</span>`).join('');
+}
+function renderAll(){
+  renderDashboard();
+  renderEntries();
+  renderRanking();
+  renderConversions();
+  renderCallCenter();
+  if(currentUser?.role==='Yönetici'){
+    renderStaff();
+    renderTargets();
+    renderLeaves();
+    renderSettings();
+    if(q('targetBranch') && !q('targetRevenue').value && !q('targetPhone').value && !q('targetAppointment').value && !q('targetYY').value && !q('targetRegistration').value && !q('targetCourse').value && !q('targetTalk').value){
+      editBranchTarget(q('targetBranch').value);
+    }
+  }
+}
+function saveEntry(){
+  const personId=q('entryPerson').value;
+  const user=db.users.find(u=>u.id===personId);
+  if(!user){ q('entryMsg').textContent='Personel seçin.'; return; }
+  if(currentUser.role!=='Yönetici' && user.id!==currentUser.id){ q('entryMsg').textContent='Sadece kendi adınıza veri girebilirsiniz.'; return; }
+
+  const selectedBranch = q('entryBranch').value;
+  if(currentUser.role!=='Yönetici'){
+    if(selectedBranch !== currentUser.branch || user.branch !== currentUser.branch){
+      q('entryMsg').textContent='Sadece kendi şubeniz için veri girebilirsiniz.';
+      return;
+    }
+  }
+
+  const entry={
+    id:id(),
+    date:q('entryDate').value || today(),
+    personId:user.id,
+    personName:user.fullName,
+    branch: currentUser.role==='Yönetici' ? q('entryBranch').value : user.branch,
+    department: currentUser.role==='Yönetici' ? q('entryDepartment').value : user.department,
+    phone:Number(q('entryPhone').value||0),
+    appointment:Number(q('entryAppointment').value||0),
+    yy:Number(q('entryYY').value||0),
+    outdoorYY:Number(q('entryOutdoorYY').value||0),
+    registration:Number(q('entryRegistration').value||0),
+    course:Number(q('entryCourse').value||0),
+    revenue:Number(q('entryRevenue').value||0),
+    talkMinutes:Number(q('entryTalk').value||0),
+    note:q('entryNote').value.trim(),
+    createdBy:currentUser.username
+  };
+  db.entries.unshift(entry); save(); q('entryMsg').textContent='Kayıt eklendi.'; resetEntryForm(false); renderAll();
+}
+function resetEntryForm(clearMsg=true){
+  q('entryDate').value=today(); q('entryPhone').value=0; q('entryAppointment').value=0; q('entryYY').value=0; q('entryOutdoorYY').value=0; q('entryRegistration').value=0; q('entryCourse').value=0; q('entryRevenue').value=0; q('entryTalk').value=0; q('entryNote').value='';
+  syncEntryBranchToPerson();
+  if(clearMsg) q('entryMsg').textContent='';
+}
+function deleteEntry(entryId){ if(!confirm('Bu veriyi silmek istiyor musunuz?')) return; db.entries=db.entries.filter(e=>e.id!==entryId); save(); renderAll(); }
+function addStaff(){
+  const fullName=q('staffName').value.trim(), username=q('staffUsername').value.trim(), password=q('staffPassword').value;
+  if(!fullName || !username || !password){ q('staffMsg').textContent='Boş alan bırakmayın.'; return; }
+  if(db.users.some(u=>u.username===username)){ q('staffMsg').textContent='Bu kullanıcı adı zaten var.'; return; }
+  db.users.push({id:id(), fullName, username, password, role:q('staffRole').value, branch:q('staffBranch').value, department:q('staffDepartment').value, active:true});
+  save(); clearStaffForm(false); q('staffMsg').textContent='Kullanıcı eklendi.'; renderAll();
+}
+function clearStaffForm(clearMsg=true){ ['staffName','staffUsername','staffPassword'].forEach(x=>q(x).value=''); if(clearMsg) q('staffMsg').textContent=''; }
+function toggleUser(userId){
+  const user=db.users.find(u=>u.id===userId); if(!user) return; user.active=!user.active; save(); renderAll();
+}
+function saveTarget(){
+  const type = q('targetType')?.value || 'branch';
+  const branch = q('targetBranch').value;
+  const target = {
+    phone:Number(q('targetPhone').value||0),
+    appointment:Number(q('targetAppointment').value||0),
+    yy:Number(q('targetYY').value||0),
+    registration:Number(q('targetRegistration').value||0),
+    course:Number(q('targetCourse').value||0),
+    revenue:Number(q('targetRevenue').value||0),
+    talk:Number(q('targetTalk').value||0)
+  };
+  if(type === 'person'){
+    const personId = q('targetPerson').value;
+    if(!personId){
+      q('targetMsg').textContent = 'Bireysel hedef için personel seçin.';
+      return;
+    }
+    db.targets.personTargets[personId] = target;
+    const user = db.users.find(u=>u.id===personId);
+    q('targetMsg').textContent = `Bireysel hedef kaydedildi: ${user ? user.fullName : ''}`;
+  } else {
+    db.targets.branchTargets[branch] = target;
+    q('targetMsg').textContent = 'Şube hedefi kaydedildi.';
+  }
+  save();
+  renderTargets();
+}
+function addLeave(){
+  const person=db.users.find(u=>u.id===q('leavePerson').value); if(!person) return;
+  db.leaves.unshift({id:id(), personName:person.fullName, type:q('leaveType').value, start:q('leaveStart').value, end:q('leaveEnd').value, note:q('leaveNote').value.trim()});
+  save(); q('leaveNote').value=''; renderLeaves();
+}
+function deleteLeave(leaveId){ db.leaves=db.leaves.filter(l=>l.id!==leaveId); save(); renderLeaves(); }
+function addBranch(){ const name=q('newBranchName').value.trim(); if(!name) return; if(db.settings.branches.includes(name)) return alert('Şube zaten var.'); db.settings.branches.push(name); db.targets.branchTargets[name]=normalizeTargetValue(0); save(); q('newBranchName').value=''; populateStaticInputs(); renderAll(); }
+function saveSettings(){
+  db.settings.periodName = q('periodName').value.trim() || db.settings.periodName;
+  db.settings.periodStart = q('periodStart').value || db.settings.periodStart || monthStart();
+  db.settings.periodEnd = q('periodEnd').value || db.settings.periodEnd || today();
+  db.settings.periodText = `${db.settings.periodStart} / ${db.settings.periodEnd}`;
+  q('periodText').value = db.settings.periodText;
+  save();
+  renderAll();
+}
+function changePassword(){
+  const old=q('oldPass').value, n1=q('newPass').value, n2=q('newPass2').value;
+  if(old!==currentUser.password){ q('passwordMsg').textContent='Mevcut şifre yanlış.'; return; }
+  if(!n1 || n1!==n2){ q('passwordMsg').textContent='Yeni şifreler eşleşmiyor.'; return; }
+  const user=db.users.find(u=>u.id===currentUser.id); user.password=n1; currentUser=user; save(); q('passwordMsg').textContent='Şifre güncellendi.'; ['oldPass','newPass','newPass2'].forEach(x=>q(x).value='');
+}
+function exportData(){
+  const blob = new Blob([JSON.stringify(db,null,2)], {type:'application/json'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='vurgan_yedek.json'; a.click(); URL.revokeObjectURL(a.href);
+}
+q('importFile').addEventListener('change', e=>{
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=()=>{ try{ db=JSON.parse(reader.result); normalizeTargets(); normalizeDepartments(); normalizeSettings(); save(); populateStaticInputs(); renderAll(); alert('Yedek içe aktarıldı.'); }catch(err){ alert('Dosya okunamadı.'); } };
+  reader.readAsText(file,'utf-8');
+});
+function setYesterday(){
+  q('filterStart').value = yesterday();
+  q('filterEnd').value = yesterday();
+  updatePeriodBadge();
+  renderAll();
+}
+function setToday(){
+  q('filterStart').value = today();
+  q('filterEnd').value = today();
+  updatePeriodBadge();
+  renderAll();
+}
+function setThisPeriod(){
+  const period = getCurrentPeriodRange();
+  q('filterStart').value = period.start;
+  q('filterEnd').value = period.end;
+  updatePeriodBadge();
+  renderAll();
+}
+function setThisMonth(){
+  q('filterStart').value = monthStart();
+  q('filterEnd').value = monthEnd();
+  updatePeriodBadge();
+  renderAll();
+}
+
+load();
+q('loginUsername').value='admin';
+q('loginPassword').value='admin123';
+
+
+
+let chatOpen = false;
+
+function openChat(){
+  const box = document.getElementById('chatBox');
+  if(!box) return;
+  chatOpen = true;
+  box.style.display = 'flex';
+  box.classList.add('open');
+  box.setAttribute('aria-hidden', 'false');
+}
+
+function closeChat(){
+  const box = document.getElementById('chatBox');
+  if(!box) return;
+  chatOpen = false;
+  box.style.display = 'none';
+  box.classList.remove('open');
+  box.setAttribute('aria-hidden', 'true');
+}
+
+function toggleChat(){
+  const box = document.getElementById('chatBox');
+  if(!box) return;
+  if(box.style.display === 'flex' || chatOpen){
+    closeChat();
+  }else{
+    openChat();
+  }
+}
+
+function sendMessage(){
+  const input = document.getElementById('chatInput');
+  const messages = document.getElementById('chatMessages');
+  if(!input || !messages) return;
+
+  const msg = input.value.trim();
+  if(!msg) return;
+
+  const div = document.createElement('div');
+  div.className = 'chat-message';
+  div.innerHTML = `<span class="chat-name">${(window.currentUser && currentUser.fullName) ? currentUser.fullName : 'User'}</span>${msg}`;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+  input.value = '';
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  const input = document.getElementById('chatInput');
+  if(input){
+    input.addEventListener('keydown', function(event){
+      if(event.key === 'Enter'){
+        sendMessage();
+      }
+    });
+  }
+  closeChat();
+});
+</script>
+
+
+<div id="chatButton" onclick="toggleChat()">💬</div>
+
+<div id="chatBox" aria-hidden="true">
+  <div class="chat-header">
+    <span>Vurgan Chat</span>
+    <button id="chatCloseButton" type="button" onclick="closeChat()">✖</button>
+  </div>
+  <div id="chatMessages" class="chat-messages"></div>
+  <div class="chat-input">
+    <input id="chatInput" placeholder="Mesaj yaz..." />
+    <button id="chatSendButton" type="button" onclick="sendMessage()">Gönder</button>
+  </div>
+</div>
+
+</body>
+</html>
