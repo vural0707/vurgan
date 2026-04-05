@@ -245,7 +245,7 @@
           <h3>Yeni veri girişi</h3>
           <div class="grid-2">
             <div><label>Tarih</label><input type="date" id="entryDate"></div>
-            <div><label>Personel</label><select id="entryPerson"></select></div>
+            <div><label>Personel</label><select id="entryPerson" onchange="syncEntryBranchToPerson()"></select></div>
             <div><label>Şube</label><select id="entryBranch"></select></div>
             <div><label>Departman</label><select id="entryDepartment"><option>Satış</option><option>Çağrı</option><option>Yönetim</option></select></div>
             <div><label>Telefon</label><input type="number" id="entryPhone" min="0" value="0"></div>
@@ -638,6 +638,22 @@ function personOptions(selectId, allowOnlyActive=true){
   });
 }
 
+function syncEntryBranchToPerson(){
+  const personSelect = q('entryPerson');
+  const branchSelect = q('entryBranch');
+  if(!personSelect || !branchSelect) return;
+  const user = db.users.find(u => u.id === personSelect.value);
+  if(!user) return;
+
+  if(currentUser?.role === 'Yönetici'){
+    branchSelect.value = user.branch || branchSelect.value;
+    branchSelect.disabled = false;
+  }else{
+    branchSelect.value = user.branch || branchSelect.value;
+    branchSelect.disabled = true;
+  }
+}
+
 function getUsersByBranch(branch, onlyActive=true){
   return db.users.filter(u => (!onlyActive || u.active) && (!branch || branch==='all' || u.branch===branch));
 }
@@ -689,7 +705,15 @@ function populateStaticInputs(){
 
   if(q('filterBranch')) q('filterBranch').value = db.settings.branches.includes(prevFilterBranch) ? prevFilterBranch : 'all';
   if(q('rankingBranch')) q('rankingBranch').value = db.settings.branches.includes(prevRankingBranch) ? prevRankingBranch : 'all';
-  if(q('entryBranch')) q('entryBranch').value = db.settings.branches.includes(prevEntryBranch) ? prevEntryBranch : (db.settings.branches[0] || '');
+  if(q('entryBranch')){
+    if(currentUser?.role === 'Yönetici'){
+      q('entryBranch').value = db.settings.branches.includes(prevEntryBranch) ? prevEntryBranch : (db.settings.branches[0] || '');
+      q('entryBranch').disabled = false;
+    }else{
+      q('entryBranch').value = currentUser?.branch || (db.settings.branches[0] || '');
+      q('entryBranch').disabled = true;
+    }
+  }
   if(q('staffBranch')) q('staffBranch').value = db.settings.branches.includes(prevStaffBranch) ? prevStaffBranch : (db.settings.branches[0] || '');
   if(q('targetBranch')) q('targetBranch').value = db.settings.branches.includes(prevTargetBranch) ? prevTargetBranch : (db.settings.branches[0] || '');
 
@@ -703,6 +727,7 @@ function populateStaticInputs(){
   q('periodEnd').value = db.settings.periodEnd || '';
   q('periodText').value = db.settings.periodText;
   syncPersonFilter();
+  syncEntryBranchToPerson();
   updatePeriodBadge();
 }
 
@@ -825,7 +850,34 @@ function renderRanking(){
   if(q('rankingBranch')) q('rankingBranch').value = db.settings.branches.includes(prevBranch) ? prevBranch : 'all';
   const branch=q('rankingBranch').value||'all';
   const dep=q('rankingDepartment').value||'all';
-  const list=aggregateByPerson(getRankingEntries()).filter(p=>(branch==='all'||p.branch===branch) && (dep==='all'||p.department===dep)).sort((a,b)=>b.revenue-a.revenue);
+
+  const aggregated = aggregateByPerson(getRankingEntries());
+  const map = {};
+  aggregated.forEach(p => { map[p.name] = p; });
+
+  db.users
+    .filter(u => u.active)
+    .forEach(u => {
+      if(currentUser.role !== 'Yönetici' && u.id !== currentUser.id) return;
+      if(!map[u.fullName]){
+        map[u.fullName] = {
+          name: u.fullName,
+          branch: u.branch,
+          department: u.department,
+          phone: 0,
+          appointment: 0,
+          yy: 0,
+          registration: 0,
+          course: 0,
+          revenue: 0,
+          talkMinutes: 0
+        };
+      }
+    });
+
+  const list=Object.values(map)
+    .filter(p=>(branch==='all'||p.branch===branch) && (dep==='all'||p.department===dep))
+    .sort((a,b)=>b.revenue-a.revenue);
   q('rankingTable').innerHTML = list.length ? list.map((p,i)=>{
     const user = db.users.find(u=>u.fullName===p.name);
     const target = normalizeTargetValue(db.targets?.personTargets?.[user?.id] || db.targets?.branchTargets?.[p.branch] || {});
@@ -962,13 +1014,22 @@ function saveEntry(){
   const user=db.users.find(u=>u.id===personId);
   if(!user){ q('entryMsg').textContent='Personel seçin.'; return; }
   if(currentUser.role!=='Yönetici' && user.id!==currentUser.id){ q('entryMsg').textContent='Sadece kendi adınıza veri girebilirsiniz.'; return; }
+
+  const selectedBranch = q('entryBranch').value;
+  if(currentUser.role!=='Yönetici'){
+    if(selectedBranch !== currentUser.branch || user.branch !== currentUser.branch){
+      q('entryMsg').textContent='Sadece kendi şubeniz için veri girebilirsiniz.';
+      return;
+    }
+  }
+
   const entry={
     id:id(),
     date:q('entryDate').value || today(),
     personId:user.id,
     personName:user.fullName,
-    branch:q('entryBranch').value,
-    department:q('entryDepartment').value,
+    branch: currentUser.role==='Yönetici' ? q('entryBranch').value : user.branch,
+    department: currentUser.role==='Yönetici' ? q('entryDepartment').value : user.department,
     phone:Number(q('entryPhone').value||0),
     appointment:Number(q('entryAppointment').value||0),
     yy:Number(q('entryYY').value||0),
@@ -983,6 +1044,7 @@ function saveEntry(){
 }
 function resetEntryForm(clearMsg=true){
   q('entryDate').value=today(); q('entryPhone').value=0; q('entryAppointment').value=0; q('entryYY').value=0; q('entryRegistration').value=0; q('entryCourse').value=0; q('entryRevenue').value=0; q('entryTalk').value=0; q('entryNote').value='';
+  syncEntryBranchToPerson();
   if(clearMsg) q('entryMsg').textContent='';
 }
 function deleteEntry(entryId){ if(!confirm('Bu veriyi silmek istiyor musunuz?')) return; db.entries=db.entries.filter(e=>e.id!==entryId); save(); renderAll(); }
